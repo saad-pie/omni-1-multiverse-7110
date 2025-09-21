@@ -1,0 +1,241 @@
+document.addEventListener('DOMContentLoaded', () => {
+    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+        anchor.addEventListener('click', function (e) {
+            e.preventDefault();
+            document.querySelector(this.getAttribute('href')).scrollIntoView({
+                behavior: 'smooth'
+            });
+            const navLinks = document.querySelector('.nav-links');
+            if (navLinks.classList.contains('active')) {
+                navLinks.classList.remove('active');
+            }
+        });
+    });
+
+    const menuToggle = document.querySelector('.menu-toggle');
+    const navLinks = document.querySelector('.nav-links');
+    menuToggle.addEventListener('click', () => {
+        navLinks.classList.toggle('active');
+    });
+
+    const sections = document.querySelectorAll('section');
+    const navLi = document.querySelectorAll('.nav-links li a');
+
+    window.addEventListener('scroll', () => {
+        let current = '';
+        sections.forEach(section => {
+            const sectionTop = section.offsetTop;
+            const sectionHeight = section.clientHeight;
+            if (pageYOffset >= sectionTop - sectionHeight / 3) {
+                current = section.getAttribute('id');
+            }
+        });
+
+        navLi.forEach(a => {
+            a.classList.remove('active');
+            if (a.getAttribute('href').includes(current)) {
+                a.classList.add('active');
+            }
+        });
+    });
+
+    const launchDate = new Date('2035-07-20T09:00:00').getTime();
+    const countdownInterval = setInterval(() => {
+        const now = new Date().getTime();
+        const distance = launchDate - now;
+
+        const days = Math.floor(distance / (1000 * 60 * 60 * 24));
+        const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+        const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+        const seconds = Math.floor((distance % (1000 * 60)) / 1000);
+
+        document.getElementById('days').innerText = days < 10 ? '0' + days : days;
+        document.getElementById('hours').innerText = hours < 10 ? '0' + hours : hours;
+        document.getElementById('minutes').innerText = minutes < 10 ? '0' + minutes : minutes;
+        document.getElementById('seconds').innerText = seconds < 10 ? '0' + seconds : seconds;
+
+        if (distance < 0) {
+            clearInterval(countdownInterval);
+            document.getElementById('days').innerText = '00';
+            document.getElementById('hours').innerText = '00';
+            document.getElementById('minutes').innerText = '00';
+            document.getElementById('seconds').innerText = '00';
+        }
+    }, 1000);
+
+    const glitchArea = document.querySelector('.glitch-area');
+    const quoteDisplay = document.querySelector('.quote-display');
+    const quotes = [
+        "Reality is merely an illusion, albeit a very persistent one. - Albert Einstein",
+        "The only way to do great work is to love what you do. - Steve Jobs",
+        "The future belongs to those who believe in the beauty of their dreams. - Eleanor Roosevelt",
+        "Logic will get you from A to B. Imagination will take you everywhere. - Albert Einstein",
+        "It's not what you look at that matters, it's what you see. - Henry David Thoreau"
+    ];
+
+    let currentQuoteIndex = 0;
+    function showRandomQuote() {
+        quoteDisplay.style.opacity = '0';
+        quoteDisplay.style.transform = 'scale(0.9)';
+        setTimeout(() => {
+            currentQuoteIndex = (currentQuoteIndex + 1) % quotes.length;
+            quoteDisplay.textContent = quotes[currentQuoteIndex];
+            quoteDisplay.style.opacity = '1';
+            quoteDisplay.style.transform = 'scale(1)';
+        }, 1000);
+    }
+    showRandomQuote();
+    setInterval(showRandomQuote, 8000);
+
+    glitchArea.addEventListener('mousemove', (e) => {
+        const { clientX, clientY } = e;
+        const { left, top, width, height } = glitchArea.getBoundingClientRect();
+
+        const x = (clientX - left) / width;
+        const y = (clientY - top) / height;
+
+        glitchArea.style.setProperty('--glitch-x', `${(x - 0.5) * 20}px`);
+        glitchArea.style.setProperty('--glitch-y', `${(y - 0.5) * 20}px`);
+        glitchArea.style.transform = `translate(${x * 5 - 2.5}px, ${y * 5 - 2.5}px) skewX(${x * 2 - 1}deg)`;
+        glitchArea.style.filter = `hue-rotate(${x * 360}deg) saturate(${1 + y}) brightness(${1 + x * 0.5})`;
+    });
+
+    glitchArea.addEventListener('mouseleave', () => {
+        glitchArea.style.setProperty('--glitch-x', '0px');
+        glitchArea.style.setProperty('--glitch-y', '0px');
+        glitchArea.style.transform = 'none';
+        glitchArea.style.filter = 'none';
+    });
+
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+    const playGameBtn = document.getElementById('playGameBtn');
+    const highScoreSpan = document.getElementById('highScore');
+
+    const gridSize = 20;
+    let snake = [{ x: 10, y: 10 }];
+    let food = {};
+    let direction = 'right';
+    let score = 0;
+    let gameInterval;
+    let gameSpeed = 150;
+    let isGameOver = false;
+    let currentHighScore = localStorage.getItem('snakeHighScore') || 0;
+    highScoreSpan.textContent = currentHighScore;
+
+    function generateFood() {
+        food = {
+            x: Math.floor(Math.random() * (canvas.width / gridSize)),
+            y: Math.floor(Math.random() * (canvas.height / gridSize))
+        };
+        for (let i = 0; i < snake.length; i++) {
+            if (food.x === snake[i].x && food.y === snake[i].y) {
+                generateFood();
+                return;
+            }
+        }
+    }
+
+    function draw() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        ctx.fillStyle = var_to_rgb('--color-game-neon-green');
+        snake.forEach(segment => {
+            ctx.fillRect(segment.x * gridSize, segment.y * gridSize, gridSize, gridSize);
+            ctx.strokeStyle = 'rgba(0, 0, 0, 0.2)';
+            ctx.strokeRect(segment.x * gridSize, segment.y * gridSize, gridSize, gridSize);
+        });
+
+        ctx.fillStyle = var_to_rgb('--color-game-neon-red');
+        ctx.fillRect(food.x * gridSize, food.y * gridSize, gridSize, gridSize);
+    }
+
+    function update() {
+        if (isGameOver) return;
+
+        const head = { x: snake[0].x, y: snake[0].y };
+
+        switch (direction) {
+            case 'up': head.y--; break;
+            case 'down': head.y++; break;
+            case 'left': head.x--; break;
+            case 'right': head.x++; break;
+        }
+
+        if (
+            head.x < 0 || head.x >= canvas.width / gridSize ||
+            head.y < 0 || head.y >= canvas.height / gridSize ||
+            checkCollision(head)
+        ) {
+            gameOver();
+            return;
+        }
+
+        snake.unshift(head);
+
+        if (head.x === food.x && head.y === food.y) {
+            score++;
+            generateFood();
+            gameSpeed = Math.max(50, gameSpeed - 5);
+            clearInterval(gameInterval);
+            gameInterval = setInterval(update, gameSpeed);
+        } else {
+            snake.pop();
+        }
+
+        draw();
+    }
+
+    function checkCollision(head) {
+        for (let i = 1; i < snake.length; i++) {
+            if (head.x === snake[i].x && head.y === snake[i].y) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    function gameOver() {
+        isGameOver = true;
+        clearInterval(gameInterval);
+        alert(`Game Over! Your score: ${score}`);
+        if (score > currentHighScore) {
+            currentHighScore = score;
+            localStorage.setItem('snakeHighScore', currentHighScore);
+            highScoreSpan.textContent = currentHighScore;
+            alert('New High Score!');
+        }
+        playGameBtn.textContent = 'Play Again!';
+        playGameBtn.style.display = 'block';
+    }
+
+    function startGame() {
+        snake = [{ x: 10, y: 10 }];
+        direction = 'right';
+        score = 0;
+        gameSpeed = 150;
+        isGameOver = false;
+        generateFood();
+        draw();
+        clearInterval(gameInterval);
+        gameInterval = setInterval(update, gameSpeed);
+        playGameBtn.style.display = 'none';
+    }
+
+    playGameBtn.addEventListener('click', startGame);
+
+    document.addEventListener('keydown', e => {
+        if (isGameOver) return;
+        switch (e.key) {
+            case 'ArrowUp': if (direction !== 'down') direction = 'up'; break;
+            case 'ArrowDown': if (direction !== 'up') direction = 'down'; break;
+            case 'ArrowLeft': if (direction !== 'right') direction = 'left'; break;
+            case 'ArrowRight': if (direction !== 'left') direction = 'right'; break;
+        }
+    });
+
+    function var_to_rgb(variable) {
+        const style = getComputedStyle(document.body);
+        return style.getPropertyValue(variable);
+    }
+});
